@@ -30,7 +30,6 @@ impl Settings {
             feeds: Vec::new(),
             check_every: 5,
             save_root: "$HOME/.adrastea".to_string(),
-            config_path: "$HOME/.config/adrastea.conf".to_string(),
         }
     }
     pub fn add_feed(&mut self, url: String) {
