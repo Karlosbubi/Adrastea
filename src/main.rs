@@ -1,6 +1,11 @@
+//! Quality of life to be removed before beta 
+#![allow(dead_code)]
+#![allow(unused_assignments)]
+#![allow(unused_imports)]
+
 use clap::Parser;
 
-const CONFIG_PATH : String= "$HOME/.config/adrastea.conf".to_string();
+const CONFIG_PATH : &str = "$HOME/.config/adrastea.conf";
 struct Feed {
     id: i32,
     name: String,
