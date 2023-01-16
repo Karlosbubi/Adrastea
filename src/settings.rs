@@ -1,6 +1,6 @@
-use std::{error::Error, fs, path};
-use std::env::var;
 use rss::Channel;
+use std::env::var;
+use std::{error::Error, fs, path};
 
 use crate::data::*;
 
@@ -36,7 +36,7 @@ impl Settings {
     }
     pub fn add_feed(&mut self, url: String) {
         let rt = tokio::runtime::Runtime::new().unwrap();
-        let name= rt.block_on(Settings::get_title(url.clone())).unwrap();
+        let name = rt.block_on(Settings::get_title(url.clone())).unwrap();
 
         let mut id = 0;
         unsafe {

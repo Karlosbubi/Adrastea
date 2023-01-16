@@ -73,4 +73,12 @@ impl DbAdapter {
             DB::MongoDB => todo!(),
         }
     }
+
+    pub fn write_feed(&self, _feed: Feed) {
+        // TODO
+    }
+
+    pub fn read_feeds(&self) -> Vec<Feed> {
+        todo!(); // TODO
+    }
 }
