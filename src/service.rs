@@ -1,49 +1,78 @@
-
 use rss::{Channel, Item};
 
-use  crate::{settings::Settings, data::Article};
+use crate::{
+    data::{Article, DbAdapter},
+    settings::Settings,
+};
 
-use std::{thread, time::Duration, error::Error};
+use reqwest;
 
-pub struct Service<'a> {
-    settings : Settings<'a>,
+use std::{error::Error, fs, thread, time::Duration};
+
+pub struct Service {
+    pub(crate) settings: Settings,
+    db: DbAdapter,
 }
 
-impl Service<'_> {
-    async fn daemon(&self) -> Result<(), Box<dyn Error>>{
-        loop{
-            for f in &self.settings.feeds {
-                let channel : Channel = Self::get_channel(f.url).await?;
-                let posts = channel.items().iter().take(self.settings.check_deep);
-                
-                for p in posts {
-                    Self::process_post(f.id, p);
-                }
+impl Service {
+    pub fn new(settings: Settings) -> Self {
+        let db = DbAdapter {
+            db: settings.db,
+            location: settings.save_root.clone(),
+            auth: "".to_string(),
+        };
+        Self { settings, db }
+    }
 
+    pub async fn daemon(&self) -> Result<(), Box<dyn Error>> {
+        loop {
+            for f in &self.settings.feeds {
+                let channel: Channel = Self::get_channel(f.url.as_str()).await?;
+                let posts = channel.items().iter().take(self.settings.check_deep);
+
+                for p in posts {
+                    Self::process_post(self, f.id, p).await?;
+                }
             }
             thread::sleep(Duration::from_secs(self.settings.check_every * 60));
         }
-       // Ok(())
+        // Ok(())
     }
 
-    async fn get_channel(url : &str) -> Result<Channel, Box<dyn Error>> {
-        let content = reqwest::get(url)
-            .await?
-            .bytes()
-            .await?;
+    async fn get_channel(url: &str) -> Result<Channel, Box<dyn Error>> {
+        let content = reqwest::get(url).await?.bytes().await?;
         let channel = Channel::read_from(&content[..])?;
         Ok(channel)
     }
 
-    fn process_post(feed : i32, post : &Item) -> Result<(), Box<dyn Error>>{
-        let url = post.link().unwrap();
-        Self::download(url);
-        let path = ""; // TODO
-        let a : Article = Article { title: post.title().unwrap(), version: 1, path: path, feed: feed, url: url };
+    async fn process_post(&self, feed: i32, post: &Item) -> Result<(), Box<dyn Error>> {
+        let link = post.link().unwrap().to_string();
+        let title = post.title().unwrap().to_string();
+        let path = format!("{}/{}/{}.html", self.settings.save_root, feed, title.trim()); // TODO
+        let a: Article = Article {
+            title: title,
+            version: 1,
+            path: path.clone(),
+            feed: feed,
+            url: link.clone(),
+        };
+
+        if !self.settings.raw_to_db {
+            Self::download(a.url.clone(), path).await?;
+            _ = self.db.write_article(a);
+        } else {
+            //TODO : Add Whole article to DB
+        }
+
+        // DEBUG
+        //println!("{}", post.title().unwrap());
+
         Ok(())
     }
 
-    fn download(url : &str) -> Result<(), Box<dyn Error>>{
+    async fn download(url: String, path: String) -> Result<(), Box<dyn Error>> {
+        let resp = reqwest::get(url).await?.text().await?;
+        fs::write(path, resp).expect("Unable to write file");
         Ok(())
     }
 }
