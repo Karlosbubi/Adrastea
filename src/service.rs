@@ -1,5 +1,5 @@
 use rss::{Channel, Item};
-use sha2::{Sha256, Digest};
+use sha2::{Digest, Sha256};
 use std::io;
 
 use crate::{

@@ -1,10 +1,10 @@
 use std::error::Error;
 
-use crate::settings::{self, DB};
 use crate::schema::articles;
-use diesel::{Insertable, RunQueryDsl, Queryable, Connection};
-use rusqlite::{params, Result};use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
-
+use crate::settings::{self, DB};
+use diesel::{Connection, Insertable, Queryable, RunQueryDsl};
+use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+use rusqlite::{params, Result};
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
@@ -33,7 +33,10 @@ pub struct DbAdapter {
 }
 
 impl DbAdapter {
-    pub fn write_article(&self, article: Article) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+    pub fn write_article(
+        &self,
+        article: Article,
+    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         match self.db {
             DB::SQLite => {
                 let path = self.location.clone() + "/index.db";
@@ -42,10 +45,10 @@ impl DbAdapter {
                 connection.run_pending_migrations(MIGRATIONS)?;
 
                 diesel::insert_into(articles::table)
-                .values(&article)
-                .execute(&mut connection)
-                .expect("Error saving new post")
-            },
+                    .values(&article)
+                    .execute(&mut connection)
+                    .expect("Error saving new post")
+            }
             DB::Postgress => {
                 todo!(); // TODO connection string
                 let path = self.location + &self.auth;
@@ -54,10 +57,10 @@ impl DbAdapter {
                 connection.run_pending_migrations(MIGRATIONS)?;
 
                 diesel::insert_into(articles::table)
-                .values(&article)
-                .execute(&mut connection)
-                .expect("Error saving new post")
-            },
+                    .values(&article)
+                    .execute(&mut connection)
+                    .expect("Error saving new post")
+            }
             DB::Maria => todo!(),
             DB::MongoDB => todo!(),
             DB::SurrealDB => todo!(),

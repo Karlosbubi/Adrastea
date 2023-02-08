@@ -4,9 +4,9 @@
 #![allow(unused_imports)]
 
 mod data;
+mod schema;
 mod service;
 mod settings;
-mod schema;
 
 use data::*;
 use service::*;
