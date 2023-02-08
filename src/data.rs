@@ -47,7 +47,7 @@ impl DbAdapter {
                 diesel::insert_into(articles::table)
                     .values(&article)
                     .execute(&mut connection)
-                    .expect("Error saving new post")
+                    .expect("Error saving new post");
             }
             DB::Postgress => {
                 todo!(); // TODO connection string
@@ -59,7 +59,7 @@ impl DbAdapter {
                 diesel::insert_into(articles::table)
                     .values(&article)
                     .execute(&mut connection)
-                    .expect("Error saving new post")
+                    .expect("Error saving new post");
             }
             DB::Maria => todo!(),
             DB::MongoDB => todo!(),
