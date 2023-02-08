@@ -6,6 +6,7 @@
 mod data;
 mod service;
 mod settings;
+mod schema;
 
 use data::*;
 use service::*;

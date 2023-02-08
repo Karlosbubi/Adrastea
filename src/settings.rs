@@ -6,11 +6,11 @@ use crate::data::*;
 
 #[derive(Debug, Copy, Clone)]
 pub enum DB {
-    SQLiteBundled,
-    SQLiteSystem,
+    SQLite,
     Postgress,
     Maria,
     MongoDB,
+    SurrealDB,
 }
 pub struct Settings {
     pub feeds: Vec<Feed>,
@@ -31,7 +31,7 @@ impl Settings {
             check_deep: 20,
             save_root: format!("{}/.adrastea", var("HOME").unwrap()),
             raw_to_db: false,
-            db: DB::SQLiteBundled,
+            db: DB::SQLite,
         }
     }
     pub fn add_feed(&mut self, url: String) {

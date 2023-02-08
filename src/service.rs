@@ -1,4 +1,6 @@
 use rss::{Channel, Item};
+use sha2::{Sha256, Digest};
+use std::io;
 
 use crate::{
     data::{Article, DbAdapter},
@@ -49,19 +51,30 @@ impl Service {
         let link = post.link().unwrap().to_string();
         let title = post.title().unwrap().to_string();
         let path = format!("{}/{}/{}.html", self.settings.save_root, feed, title.trim()); // TODO
-        let a: Article = Article {
+        let mut a: Article = Article {
             title: title,
             version: 1,
             path: path.clone(),
             feed: feed,
             url: link.clone(),
+            hash: "".to_string(),
         };
 
+        let mut hasher = Sha256::new();
+
         if !self.settings.raw_to_db {
-            Self::download(a.url.clone(), path).await?;
+            Self::download(a.url.clone(), path.clone()).await?;
+            let mut file = fs::File::open(&path)?;
+            _ = io::copy(&mut file, &mut hasher)?;
+            let hash = hasher.finalize();
+            a.hash = format!("{:x}", hash);
             _ = self.db.write_article(a);
         } else {
             //TODO : Add Whole article to DB
+            let resp = reqwest::get(a.url.clone()).await?.text().await?;
+            hasher.update(resp);
+            let hash = hasher.finalize();
+            a.hash = format!("{:x}", hash);
         }
 
         // DEBUG

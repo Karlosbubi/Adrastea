@@ -5,11 +5,11 @@ A small RSS based scraper
 ## Goals
 
 ### MVP
-- [ ] Read and Track RSS-Feeds
-- [ ] Download Articles
-- [ ] Keep Track of Downloads (SQLite)
+- [x] Read and Track RSS-Feeds
+- [x] Download Articles
+- [x] Keep Track of Downloads (SQLite)
 - [ ] Background Service (Systemd)
-- [ ] CLI
+- [ ] CLI (??)
 - [ ] Settings File
 
 ### Feature Ideas

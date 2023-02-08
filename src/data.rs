@@ -1,8 +1,12 @@
 use std::error::Error;
 
 use crate::settings::{self, DB};
-use diesel::Queryable;
-use rusqlite::{params, Connection, Result};
+use crate::schema::articles;
+use diesel::{Insertable, RunQueryDsl, Queryable, Connection};
+use rusqlite::{params, Result};use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+
+
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
 #[derive(Debug, Clone, Queryable)]
 pub struct Feed {
@@ -11,8 +15,10 @@ pub struct Feed {
     pub url: String,
 }
 
-#[derive(Debug, Clone, Queryable)]
+#[derive(Debug, Clone, Queryable, Insertable)]
+#[diesel(table_name = articles)]
 pub struct Article {
+    pub hash: String,
     pub title: String,
     pub version: i32,
     pub path: String,
@@ -27,50 +33,45 @@ pub struct DbAdapter {
 }
 
 impl DbAdapter {
-    pub fn write_article(&self, article: Article) -> Result<(), Box<dyn Error>> {
+    pub fn write_article(&self, article: Article) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         match self.db {
-            DB::SQLiteBundled => {
+            DB::SQLite => {
                 let path = self.location.clone() + "/index.db";
-                let conn = Connection::open(path.as_str())?;
-                // TODO : Check if table already exists
-                _ = conn.execute(
-                    "CREATE TABLE article (
-                    title TEXT PRIMARY KEY,
-                    version INTEGER NOT NULL,
-                    path TEXT NOT NULL,
-                    feed INTEGER NOT NULL,
-                    url TEXT NOT NULL
-                )",
-                    (),
-                );
+                let mut connection = diesel::SqliteConnection::establish(&path)?;
 
-                _ = conn.execute(
-                    "INSERT INTO article (title, version, path, feed, url)
-                    VALUES (?1, ?2, ?3, ?4, ?5)",
-                    (
-                        article.title,
-                        article.version,
-                        article.path,
-                        article.feed,
-                        article.url,
-                    ),
-                );
-            }
-            DB::SQLiteSystem => todo!(),
-            DB::Postgress => todo!(),
+                connection.run_pending_migrations(MIGRATIONS)?;
+
+                diesel::insert_into(articles::table)
+                .values(&article)
+                .execute(&mut connection)
+                .expect("Error saving new post")
+            },
+            DB::Postgress => {
+                todo!(); // TODO connection string
+                let path = self.location + &self.auth;
+                let mut connection = diesel::PgConnection::establish(&path)?;
+
+                connection.run_pending_migrations(MIGRATIONS)?;
+
+                diesel::insert_into(articles::table)
+                .values(&article)
+                .execute(&mut connection)
+                .expect("Error saving new post")
+            },
             DB::Maria => todo!(),
             DB::MongoDB => todo!(),
+            DB::SurrealDB => todo!(),
         };
         Ok(())
     }
 
     pub fn write_blob_article(&self, _article: Article, _blob: String) {
         match self.db {
-            DB::SQLiteBundled => todo!(),
-            DB::SQLiteSystem => todo!(),
+            DB::SQLite => todo!(),
             DB::Postgress => todo!(),
             DB::Maria => todo!(),
             DB::MongoDB => todo!(),
+            DB::SurrealDB => todo!(),
         }
     }
 
